@@ -1,6 +1,7 @@
 package ui
 
 import (
+	"fmt"
 	"image"
 	"image/color"
 	"log"
@@ -25,8 +26,9 @@ type Visualizer struct {
 	tx   chan screen.Texture
 	done chan struct{}
 
-	sz  size.Event
-	pos image.Rectangle
+	sz       size.Event
+	pos      image.Rectangle
+	mousePos image.Point
 }
 
 func (pw *Visualizer) Main() {
@@ -34,6 +36,7 @@ func (pw *Visualizer) Main() {
 	pw.done = make(chan struct{})
 	pw.pos.Max.X = 200
 	pw.pos.Max.Y = 200
+	pw.mousePos = image.Point{X: 400, Y: 400}
 	driver.Main(pw.run)
 }
 
@@ -47,7 +50,9 @@ func (pw *Visualizer) run(s screen.Screen) {
 	}
 
 	w, err := s.NewWindow(&screen.NewWindowOptions{
-		Title: pw.Title,
+		Title:  pw.Title,
+		Width:  800,
+		Height: 800,
 	})
 	if err != nil {
 		log.Fatal("Failed to initialize the app window:", err)
@@ -104,7 +109,7 @@ func detectTerminate(e any) bool {
 	return false
 }
 
-func (pw *Visualizer) handleEvent(e any, t screen.Texture) {
+func (pw *Visualizer) handleEvent(e any, tx screen.Texture) {
 	switch e := e.(type) {
 
 	case size.Event: // Оновлення даних про розмір вікна.
@@ -114,27 +119,40 @@ func (pw *Visualizer) handleEvent(e any, t screen.Texture) {
 		log.Printf("ERROR: %s", e)
 
 	case mouse.Event:
-		if t == nil {
+		if tx == nil {
 			// TODO: Реалізувати реакцію на натискання кнопки миші.
+			if e.Button == mouse.ButtonLeft && e.Direction == mouse.DirPress {
+				pw.mousePos = image.Point{
+					X: int(e.X),
+					Y: int(e.Y),
+				}
+
+				pw.w.Send(paint.Event{})
+				fmt.Printf("Clicked on point: x=%d, y=%d\n", int(e.X), int(e.Y))
+			}
 		}
 
 	case paint.Event:
 		// Малювання контенту вікна.
-		if t == nil {
+		if tx == nil {
 			pw.drawDefaultUI()
 		} else {
 			// Використання текстури отриманої через виклик Update.
-			pw.w.Scale(pw.sz.Bounds(), t, t.Bounds(), draw.Src, nil)
+			pw.w.Scale(pw.sz.Bounds(), tx, tx.Bounds(), draw.Src, nil)
 		}
 		pw.w.Publish()
 	}
 }
 
 func (pw *Visualizer) drawDefaultUI() {
+	X, Y := pw.mousePos.X, pw.mousePos.Y
+	fillColor := color.RGBA{R: 255, G: 255, B: 0, A: 1}
+
 	pw.w.Fill(pw.sz.Bounds(), color.Black, draw.Src) // Фон.
 
 	// TODO: Змінити колір фону та додати відображення фігури у вашому варіанті.
-
+	pw.w.Fill(image.Rect(X-150, Y-100, X+150, Y), fillColor, draw.Src)
+	pw.w.Fill(image.Rect(X-50, Y, X+50, Y+100), fillColor, draw.Src)
 	// Малювання білої рамки.
 	for _, br := range imageutil.Border(pw.sz.Bounds(), 10) {
 		pw.w.Fill(br, color.White, draw.Src)
