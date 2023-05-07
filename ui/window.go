@@ -22,7 +22,7 @@ type Visualizer struct {
 	Debug         bool
 	OnScreenReady func(s screen.Screen)
 
-	w    screen.Window
+	wnd  screen.Window
 	tx   chan screen.Texture
 	done chan struct{}
 
@@ -31,26 +31,26 @@ type Visualizer struct {
 	mousePos image.Point
 }
 
-func (pw *Visualizer) Main() {
-	pw.tx = make(chan screen.Texture)
-	pw.done = make(chan struct{})
-	pw.pos.Max.X = 200
-	pw.pos.Max.Y = 200
-	pw.mousePos = image.Point{X: 400, Y: 400}
-	driver.Main(pw.run)
+func (pv *Visualizer) Main() {
+	pv.tx = make(chan screen.Texture)
+	pv.done = make(chan struct{})
+	pv.pos.Max.X = 200
+	pv.pos.Max.Y = 200
+	pv.mousePos = image.Point{X: 400, Y: 400}
+	driver.Main(pv.run)
 }
 
-func (pw *Visualizer) Update(t screen.Texture) {
-	pw.tx <- t
+func (pv *Visualizer) Update(tx screen.Texture) {
+	pv.tx <- tx
 }
 
-func (pw *Visualizer) run(s screen.Screen) {
-	if pw.OnScreenReady != nil {
-		pw.OnScreenReady(s)
+func (pv *Visualizer) run(scr screen.Screen) {
+	if pv.OnScreenReady != nil {
+		pv.OnScreenReady(scr)
 	}
 
-	w, err := s.NewWindow(&screen.NewWindowOptions{
-		Title:  pw.Title,
+	wnd, err := scr.NewWindow(&screen.NewWindowOptions{
+		Title:  pv.Title,
 		Width:  800,
 		Height: 800,
 	})
@@ -58,17 +58,17 @@ func (pw *Visualizer) run(s screen.Screen) {
 		log.Fatal("Failed to initialize the app window:", err)
 	}
 	defer func() {
-		w.Release()
-		close(pw.done)
+		wnd.Release()
+		close(pv.done)
 	}()
 
-	pw.w = w
+	pv.wnd = wnd
 
 	events := make(chan any)
 	go func() {
 		for {
-			e := w.NextEvent()
-			if pw.Debug {
+			e := wnd.NextEvent()
+			if pv.Debug {
 				log.Printf("new event: %v", e)
 			}
 			if detectTerminate(e) {
@@ -79,7 +79,7 @@ func (pw *Visualizer) run(s screen.Screen) {
 		}
 	}()
 
-	var t screen.Texture
+	var tx screen.Texture
 
 	for {
 		select {
@@ -87,10 +87,10 @@ func (pw *Visualizer) run(s screen.Screen) {
 			if !ok {
 				return
 			}
-			pw.handleEvent(e, t)
+			pv.handleEvent(e, tx)
 
-		case t = <-pw.tx:
-			w.Send(paint.Event{})
+		case tx = <-pv.tx:
+			wnd.Send(paint.Event{})
 		}
 	}
 }
@@ -109,25 +109,24 @@ func detectTerminate(e any) bool {
 	return false
 }
 
-func (pw *Visualizer) handleEvent(e any, tx screen.Texture) {
+func (pv *Visualizer) handleEvent(e any, tx screen.Texture) {
 	switch e := e.(type) {
 
 	case size.Event: // Оновлення даних про розмір вікна.
-		pw.sz = e
+		pv.sz = e
 
 	case error:
 		log.Printf("ERROR: %s", e)
 
 	case mouse.Event:
 		if tx == nil {
-			// TODO: Реалізувати реакцію на натискання кнопки миші.
+			// Реалізація реакції на натискання кнопки миші.
 			if e.Button == mouse.ButtonLeft && e.Direction == mouse.DirPress {
-				pw.mousePos = image.Point{
+				pv.mousePos = image.Point{
 					X: int(e.X),
 					Y: int(e.Y),
 				}
-
-				pw.w.Send(paint.Event{})
+				pv.wnd.Send(paint.Event{})
 				fmt.Printf("Clicked on point: x=%d, y=%d\n", int(e.X), int(e.Y))
 			}
 		}
@@ -135,26 +134,26 @@ func (pw *Visualizer) handleEvent(e any, tx screen.Texture) {
 	case paint.Event:
 		// Малювання контенту вікна.
 		if tx == nil {
-			pw.drawDefaultUI()
+			pv.drawDefaultUI()
 		} else {
 			// Використання текстури отриманої через виклик Update.
-			pw.w.Scale(pw.sz.Bounds(), tx, tx.Bounds(), draw.Src, nil)
+			pv.wnd.Scale(pv.sz.Bounds(), tx, tx.Bounds(), draw.Src, nil)
 		}
-		pw.w.Publish()
+		pv.wnd.Publish()
 	}
 }
 
-func (pw *Visualizer) drawDefaultUI() {
-	X, Y := pw.mousePos.X, pw.mousePos.Y
+func (pv *Visualizer) drawDefaultUI() {
+	X, Y := pv.mousePos.X, pv.mousePos.Y
 	fillColor := color.RGBA{R: 255, G: 255, B: 0, A: 1}
 
-	pw.w.Fill(pw.sz.Bounds(), color.Black, draw.Src) // Фон.
+	pv.wnd.Fill(pv.sz.Bounds(), color.Black, draw.Src) // Фон.
 
 	// TODO: Змінити колір фону та додати відображення фігури у вашому варіанті.
-	pw.w.Fill(image.Rect(X-150, Y-100, X+150, Y), fillColor, draw.Src)
-	pw.w.Fill(image.Rect(X-50, Y, X+50, Y+100), fillColor, draw.Src)
+	pv.wnd.Fill(image.Rect(X-150, Y-100, X+150, Y), fillColor, draw.Src)
+	pv.wnd.Fill(image.Rect(X-50, Y, X+50, Y+100), fillColor, draw.Src)
 	// Малювання білої рамки.
-	for _, br := range imageutil.Border(pw.sz.Bounds(), 10) {
-		pw.w.Fill(br, color.White, draw.Src)
+	for _, br := range imageutil.Border(pv.sz.Bounds(), 10) {
+		pv.wnd.Fill(br, color.White, draw.Src)
 	}
 }
