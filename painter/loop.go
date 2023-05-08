@@ -21,7 +21,7 @@ type Loop struct {
 	mq messageQueue
 }
 
-var size = image.Pt(400, 400)
+var size = image.Pt(800, 800)
 
 // Start запускає цикл подій. Цей метод потрібно запустити до того, як викликати на ньому будь-які інші методи.
 func (l *Loop) Start(s screen.Screen) {
@@ -33,23 +33,24 @@ func (l *Loop) Start(s screen.Screen) {
 	go func() { //запуск рутини обробки повідомлень у черзі подій.
 		for {
 			op := l.mq.pull()
-			l.Post(op)
+			if op == nil {
+				continue
+			}
+			isUpdate := op.Do(l.next)
+			if isUpdate {
+				l.Receiver.Update(l.next)
+				l.next, l.prev = l.prev, l.next
+			}
 		}
 	}()
 }
 
 // Post додає нову операцію у внутрішню чергу.
 func (l *Loop) Post(op Operation) {
-	//реалізація додавання операції в чергу
 	if op == nil {
 		return
 	}
 	l.mq.push(op)
-	update := op.Do(l.next)
-	if update {
-		l.Receiver.Update(l.next)
-		l.next, l.prev = l.prev, l.next
-	}
 }
 
 // StopAndWait сигналізує
