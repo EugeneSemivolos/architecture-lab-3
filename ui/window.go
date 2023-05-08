@@ -150,8 +150,8 @@ func (pv *Visualizer) drawDefaultUI() {
 	pv.wnd.Fill(pv.sz.Bounds(), color.Black, draw.Src) // Фон.
 
 	// TODO: Змінити колір фону та додати відображення фігури у вашому варіанті.
-	pv.wnd.Fill(image.Rect(X-150, Y-100, X+150, Y), fillColor, draw.Src)
-	pv.wnd.Fill(image.Rect(X-50, Y, X+50, Y+100), fillColor, draw.Src)
+	pv.wnd.Fill(image.Rect(X-150, Y-50, X+150, Y+50), fillColor, draw.Src)
+	pv.wnd.Fill(image.Rect(X-50, Y-150, X+50, Y+150), fillColor, draw.Src)
 	// Малювання білої рамки.
 	for _, br := range imageutil.Border(pv.sz.Bounds(), 10) {
 		pv.wnd.Fill(br, color.White, draw.Src)
