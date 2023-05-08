@@ -1,7 +1,9 @@
 package painter
 
 import (
+	"image"
 	"image/color"
+	"image/draw"
 
 	"golang.org/x/exp/shiny/screen"
 )
@@ -37,12 +39,50 @@ func (f OperationFunc) Do(tx screen.Texture) bool {
 	return false
 }
 
-// WhiteFill зафарбовує тестуру у білий колір. Може бути викоистана як Operation через OperationFunc(WhiteFill).
+type BgRectangle struct {
+	X1, Y1, X2, Y2 int
+}
+
+func (op *BgRectangle) Do(tx screen.Texture) bool {
+	tx.Fill(image.Rect(op.X1, op.Y1, op.X2, op.Y2), color.Black, screen.Src)
+	return false
+}
+
+type Figure struct {
+	X, Y int
+	C    color.RGBA
+}
+
+func (op *Figure) Do(tx screen.Texture) bool {
+	tx.Fill(image.Rect(op.X-150, op.Y-50, op.X+150, op.Y+50), op.C, draw.Src)
+	tx.Fill(image.Rect(op.X-50, op.Y-150, op.X+50, op.Y+150), op.C, draw.Src)
+	return false
+}
+
+type Move struct {
+	X, Y    int
+	Figures []*Figure
+}
+
+func (op *Move) Do(tx screen.Texture) bool {
+	for i := range op.Figures {
+		op.Figures[i].X += op.X
+		op.Figures[i].Y += op.Y
+	}
+	return false
+}
+
+// ResetScreen зафарбовує тестуру у чорний колір.
+func ResetScreen(tx screen.Texture) {
+	tx.Fill(tx.Bounds(), color.Black, draw.Src)
+}
+
+// WhiteFill зафарбовує тестуру у білий колір.
 func WhiteFill(tx screen.Texture) {
 	tx.Fill(tx.Bounds(), color.White, screen.Src)
 }
 
-// GreenFill зафарбовує тестуру у зелений колір. Може бути викоистана як Operation через OperationFunc(GreenFill).
+// GreenFill зафарбовує тестуру у зелений колір.
 func GreenFill(tx screen.Texture) {
 	tx.Fill(tx.Bounds(), color.RGBA{G: 0xff, A: 0xff}, screen.Src)
 }
