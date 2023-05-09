@@ -18,7 +18,7 @@ type Loop struct {
 	next screen.Texture // текстура, яка зараз формується
 	prev screen.Texture // текстура, яка була відправленя останнього разу у Receiver
 
-	mq messageQueue
+	MsgQueue messageQueue
 }
 
 var size = image.Pt(800, 800)
@@ -28,11 +28,11 @@ func (l *Loop) Start(s screen.Screen) {
 	l.next, _ = s.NewTexture(size)
 	l.prev, _ = s.NewTexture(size)
 
-	l.mq = messageQueue{} // ініціалізація черги подій
+	l.MsgQueue = messageQueue{} // ініціалізація черги подій
 
 	go func() { //запуск рутини обробки повідомлень у черзі подій.
 		for {
-			op := l.mq.pull()
+			op := l.MsgQueue.pull()
 			if op == nil {
 				continue
 			}
@@ -50,7 +50,7 @@ func (l *Loop) Post(op Operation) {
 	if op == nil {
 		return
 	}
-	l.mq.push(op)
+	l.MsgQueue.push(op)
 }
 
 // StopAndWait сигналізує
@@ -60,19 +60,19 @@ func (l *Loop) StopAndWait() {
 
 // черга повідомлень.
 type messageQueue struct {
-	queue []Operation
+	Queue []Operation
 }
 
 func (mq *messageQueue) push(op Operation) {
-	mq.queue = append(mq.queue, op)
+	mq.Queue = append(mq.Queue, op)
 }
 
 func (mq *messageQueue) pull() Operation {
-	if len(mq.queue) == 0 {
+	if len(mq.Queue) == 0 {
 		return nil
 	}
 
-	op := mq.queue[0]
-	mq.queue = mq.queue[1:]
+	op := mq.Queue[0]
+	mq.Queue = mq.Queue[1:]
 	return op
 }
