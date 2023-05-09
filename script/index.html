@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="UTF-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Painter Controller</title>
+    <link rel="stylesheet" href="style.css" />
+  </head>
+  <body>
+    <div class="wrapper">
+      <div class="main-container">
+        <h1 class="title">Painter Controller</h1>
+        <form class="form">
+          <label class="subtitle">Enter commands:</label>
+          <div class="form-group">
+            <textarea class="form-control" id="textarea" rows="3"></textarea>
+          </div>
+          <label class="hint">Example: green, update</label>
+          <button type="submit" class="gray btn-block">Send</button>
+        </form>
+        <div class="button-container">
+          <button class="green gf-script">Green Frame</button>
+          <button class="yellow dm-script">
+            <span>Diagonal Move</span>
+          </button>
+        </div>
+      </div>
+    </div>
+    <video autoplay muted loop src="./public/paint.mp4"></video>
+    <script type="module" src="./processing-functions.js"></script>
+    <script type="module" src="./request-api.js"></script>
+    <script type="module" src="./script.js"></script>
+  </body>
+</html>
