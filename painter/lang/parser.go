@@ -14,7 +14,7 @@ import (
 // Parser уміє прочитати дані з вхідного io.Reader та повернути список операцій представлені вхідним скриптом.
 type Parser struct {
 	lastBgColor painter.Operation
-	lastBgRect  *painter.BgRectangle
+	lastBgRect  *painter.BgRect
 	figures     []*painter.Figure
 	moveOps     []painter.Operation
 	updateOp    painter.Operation
@@ -22,15 +22,14 @@ type Parser struct {
 
 func (p *Parser) Parse(in io.Reader) ([]painter.Operation, error) {
 	p.init()
+	var res []painter.Operation
 	scanner := bufio.NewScanner(in)
 	scanner.Split(bufio.ScanLines)
-
-	var res []painter.Operation
 
 	for scanner.Scan() {
 		commandLine := scanner.Text()
 
-		op, err := p.parse(commandLine)
+		op, err := p.parseCommand(commandLine)
 		if err != nil {
 			return nil, err
 		}
@@ -48,13 +47,16 @@ func (p *Parser) init() {
 	}
 }
 
-func (p *Parser) parse(commandLine string) ([]painter.Operation, error) {
+func (p *Parser) parseCommand(commandLine string) ([]painter.Operation, error) {
 	parts := strings.Fields(commandLine)
 	if len(parts) < 1 {
 		return nil, nil
 	}
 	instruction := parts[0]
-	iArgs, _ := getArgs(parts)
+	iArgs, err := parseArgs(parts[1:])
+	if err != nil {
+		return nil, err
+	}
 
 	switch instruction {
 	case "white":
@@ -65,7 +67,7 @@ func (p *Parser) parse(commandLine string) ([]painter.Operation, error) {
 		if len(iArgs) != 4 {
 			return nil, fmt.Errorf("invalid number of arguments for command bgrect: %v", len(iArgs))
 		}
-		p.lastBgRect = &painter.BgRectangle{X1: iArgs[0], Y1: iArgs[1], X2: iArgs[2], Y2: iArgs[3]}
+		p.lastBgRect = &painter.BgRect{X1: iArgs[0], Y1: iArgs[1], X2: iArgs[2], Y2: iArgs[3]}
 	case "figure":
 		if len(iArgs) != 2 {
 			return nil, fmt.Errorf("invalid number of arguments for command figure: %v", len(iArgs))
@@ -91,20 +93,26 @@ func (p *Parser) parse(commandLine string) ([]painter.Operation, error) {
 	return p.getParsedCommands(), nil
 }
 
-func getArgs(parts []string) ([]int, error) {
-	if len(parts) == 1 {
+func parseArgs(argsStr []string) ([]float32, error) {
+	if len(argsStr) == 0 {
 		return nil, nil
 	}
-	argsStr := parts[1:]
-	var args []int
-	for _, arg := range argsStr {
-		i, err := strconv.Atoi(arg)
+	var res []float32
+
+	for _, argStr := range argsStr {
+		arg, err := strconv.ParseFloat(argStr, 32)
 		if err != nil {
-			return nil, fmt.Errorf("invalid argument: %v", arg)
+			return nil, fmt.Errorf("invalid params")
 		}
-		args = append(args, i)
+
+		if arg < 0 || arg > 1 {
+			return nil, fmt.Errorf("invalid coordinates")
+		}
+
+		res = append(res, float32(arg))
 	}
-	return args, nil
+
+	return res, nil
 }
 
 func (p *Parser) resetState() {
