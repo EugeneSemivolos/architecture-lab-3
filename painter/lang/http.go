@@ -4,7 +4,6 @@ import (
 	"io"
 	"log"
 	"net/http"
-	"strings"
 
 	"github.com/EugeneSemivolos/architecture-lab-3/painter"
 )
@@ -13,10 +12,9 @@ import (
 // операцій у painter.Loop.
 func HttpHandler(loop *painter.Loop, parser *Parser) http.Handler {
 	return http.HandlerFunc(func(rw http.ResponseWriter, req *http.Request) {
+		rw.Header().Set("Access-Control-Allow-Origin", "http://127.0.0.1:5500")
+		rw.Header().Set("Access-Control-Allow-Headers", "Content-Type")
 		var in io.Reader = req.Body
-		if req.Method == http.MethodGet {
-			in = strings.NewReader(req.URL.Query().Get("cmd"))
-		}
 
 		cmds, err := parser.Parse(in)
 		if err != nil {
