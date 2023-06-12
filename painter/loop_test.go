@@ -1,4 +1,4 @@
-package tests
+package painter
 
 import (
 	"image"
@@ -7,7 +7,6 @@ import (
 	"testing"
 	"time"
 
-	"github.com/EugeneSemivolos/architecture-lab-3/painter"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 	"golang.org/x/exp/shiny/screen"
@@ -69,7 +68,7 @@ func TestLoop_Post_Success(t *testing.T) {
 	texture := image.Pt(800, 800)
 	screenMock.On("NewTexture", texture).Return(textureMock, nil)
 	receiverMock.On("Update", textureMock).Return()
-	loop := painter.Loop{
+	loop := Loop{
 		Receiver: receiverMock,
 	}
 	loop.Start(screenMock)
@@ -78,10 +77,10 @@ func TestLoop_Post_Success(t *testing.T) {
 	textureMock.On("Bounds").Return(image.Rectangle{})
 	mockOpOne.On("Do", textureMock).Return(true)
 
-	assert.Empty(t, loop.MsgQueue.Queue)
+	assert.Empty(t, loop.mq.queue)
 	loop.Post(mockOpOne)
 	time.Sleep(1 * time.Second)
-	assert.Empty(t, loop.MsgQueue.Queue)
+	assert.Empty(t, loop.mq.queue)
 
 	mockOpOne.AssertCalled(t, "Do", textureMock)
 	receiverMock.AssertCalled(t, "Update", textureMock)
@@ -96,7 +95,7 @@ func TestLoop_Post_Failure(t *testing.T) {
 	texture := image.Pt(800, 800)
 	screenMock.On("NewTexture", texture).Return(textureMock, nil)
 	receiverMock.On("Update", textureMock).Return()
-	loop := painter.Loop{
+	loop := Loop{
 		Receiver: receiverMock,
 	}
 
@@ -105,10 +104,10 @@ func TestLoop_Post_Failure(t *testing.T) {
 	textureMock.On("Bounds").Return(image.Rectangle{})
 	mockOpOne.On("Do", textureMock).Return(false)
 
-	assert.Empty(t, loop.MsgQueue.Queue)
+	assert.Empty(t, loop.mq.queue)
 	loop.Post(mockOpOne)
 	time.Sleep(1 * time.Second)
-	assert.Empty(t, loop.MsgQueue.Queue)
+	assert.Empty(t, loop.mq.queue)
 
 	mockOpOne.AssertCalled(t, "Do", textureMock)
 	receiverMock.AssertNotCalled(t, "Update", textureMock)

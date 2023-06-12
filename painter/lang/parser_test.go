@@ -1,4 +1,4 @@
-package tests
+package lang
 
 import (
 	"image/color"
@@ -6,7 +6,6 @@ import (
 	"testing"
 
 	"github.com/EugeneSemivolos/architecture-lab-3/painter"
-	"github.com/EugeneSemivolos/architecture-lab-3/painter/lang"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -66,7 +65,7 @@ var testsFunc = []Test{
 func TestParseStruct(t *testing.T) {
 	for _, tc := range testsStruct {
 		t.Run(tc.name, func(t *testing.T) {
-			parser := &lang.Parser{}
+			parser := &Parser{}
 			ops, err := parser.Parse(strings.NewReader(tc.command))
 			if tc.op == nil {
 				assert.Error(t, err)
@@ -80,7 +79,7 @@ func TestParseStruct(t *testing.T) {
 }
 
 func TestParseFunc(t *testing.T) {
-	parser := &lang.Parser{}
+	parser := &Parser{}
 
 	for _, tc := range testsFunc {
 		t.Run(tc.name, func(t *testing.T) {
